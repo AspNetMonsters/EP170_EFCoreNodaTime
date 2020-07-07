@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NodaTime.Serialization.SystemTextJson;
 
 namespace EP170_EFCoreNodaTime
 {
@@ -29,6 +30,11 @@ namespace EP170_EFCoreNodaTime
                 config.EnableSensitiveDataLogging();
                 });
             services.AddRazorPages();
+            services.AddControllers()
+                .AddJsonOptions(config =>
+                {
+                    config.JsonSerializerOptions.ConfigureForNodaTime(NodaTime.DateTimeZoneProviders.Tzdb);
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -55,6 +61,7 @@ namespace EP170_EFCoreNodaTime
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
+                endpoints.MapControllers();
             });
         }
     }
