@@ -1,0 +1,91 @@
+﻿@page
+@model EP170_EFCoreNodaTime.Pages.VueModel
+@{
+    ViewData["Title"] = "Vue";
+}
+
+<v-app id="app">
+    <v-app-bar app dark color="primary">
+        <v-toolbar-title>{{message}}</v-toolbar-title>
+    </v-app-bar>
+    <v-container>
+        <v-main>
+
+            <v-text-field v-model="newHolidayName" append-icon="mdi-send" @@click:append="addHoliday"></v-text-field>
+
+            <v-list>
+                <v-list-item v-for="item in afterToday">
+
+                    <v-list-item-content>{{item.name}} - {{item.formattedDate()}}</v-list-item-content>
+                    <v-list-item-action>
+                        <v-btn icon @@click="vote(item)"></v-btn>
+                    </v-list-item-action>
+                </v-list-item>
+            </v-list>
+        </v-main>
+    </v-container>
+</v-app>
+
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/vue@@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@@2.x/dist/vuetify.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@@1.24.1/build/global/luxon.min.js"></script>
+
+    <script type="text/javascript">
+        class Holiday {
+            constructor() {
+                this.name = "";
+                this.date = undefined;
+            }
+
+            formattedDate() {
+                return this.date ? this.date.toLocaleString() : '';
+            }
+
+            static fromData(data) {
+                const holiday = new Holiday();
+                Object.assign(holiday, data);
+                holiday.date = luxon.DateTime.fromISO(data.date);
+                return holiday;
+            }
+        }
+
+
+        let app = new Vue({
+            el: '#app',
+            vuetify: new Vuetify(),
+            computed: {
+                afterToday: function () {
+                    const today = luxon.DateTime.local();
+                    return this.holidays.filter(h => h.date >= today);
+                }
+            },
+            created: function () {
+                fetch('/api/publicholidays').then(response => {
+                    if (response.ok) {
+                        response.json().then(holidays => {
+                            this.holidays = holidays.map(h => Holiday.fromData(h));
+                        });
+                    }
+                });
+            },
+            data: {
+                newHolidayName: '',
+
+                message: 'Canadian Holidays',
+                holidays: []
+            },
+            methods: {
+                addHoliday: function () {
+                }
+            }
+        });
+
+
+    </script>
+
+
+
+}
+

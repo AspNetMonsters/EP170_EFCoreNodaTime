@@ -29,7 +29,7 @@ namespace EP170_EFCoreNodaTime
                 config.UseSqlServer(Configuration.GetConnectionString("HolidaysDb"));
                 config.EnableSensitiveDataLogging();
                 });
-            services.AddRazorPages();
+            services.AddRazorPages().AddRazorRuntimeCompilation();
             services.AddControllers()
                 .AddJsonOptions(config =>
                 {
