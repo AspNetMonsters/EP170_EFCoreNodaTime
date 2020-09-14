@@ -10,8 +10,28 @@
     </v-app-bar>
     <v-container>
         <v-main>
-
-            <v-text-field v-model="newHolidayName" append-icon="mdi-send" @@click:append="addHoliday"></v-text-field>
+            <v-menu ref="menu"
+                    v-model="menu"
+                    :close-on-content-click="false"
+                    :return-value.sync="newHoliday.displayDate"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px">
+                <template v-slot:activator="{ on, attrs }">
+                    <v-text-field v-model="newHoliday.formattedDate()"
+                                  label="Holiday Date"
+                                  prepend-icon="mdi-event"
+                                  readonly
+                                  v-bind="attrs"
+                                  v-on="on"></v-text-field>
+                </template>
+                <v-date-picker v-model="newHoliday.displayDate" no-title scrollable>
+                    <v-spacer></v-spacer>
+                    <v-btn text color="primary" @@click="menu = false">Cancel</v-btn>
+                    <v-btn text color="primary" @@click="$refs.menu.save(newHoliday.displayDate)">OK</v-btn>
+                </v-date-picker>
+            </v-menu>
+            <v-text-field v-model="newHoliday.name" append-icon="mdi-send" @@click:append="addHoliday"></v-text-field>
 
             <v-list>
                 <v-list-item v-for="item in afterToday">
@@ -36,19 +56,37 @@
         class Holiday {
             constructor() {
                 this.name = "";
-                this.date = undefined;
+                this.date = luxon.DateTime.local();
             }
 
             formattedDate() {
                 return this.date ? this.date.toLocaleString() : '';
             }
 
+            get displayDate() {
+                return this.date ? this.date.toISODate() : '';
+            }
+
+            set displayDate(holidayDate) {
+                this.date = luxon.DateTime.fromISO(holidayDate);
+            }
+
+ 
             static fromData(data) {
                 const holiday = new Holiday();
                 Object.assign(holiday, data);
                 holiday.date = luxon.DateTime.fromISO(data.date);
                 return holiday;
             }
+
+            toJSON() {
+                return {
+                    name: this.name,
+                    date: this.date.toISODate()
+                }
+            }
+
+ 
         }
 
 
@@ -71,13 +109,25 @@
                 });
             },
             data: {
-                newHolidayName: '',
-
+                newHoliday: new Holiday(),
+                menu: false,
                 message: 'Canadian Holidays',
                 holidays: []
             },
             methods: {
                 addHoliday: function () {
+                    fetch('/api/publicholidays', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.newHoliday)
+                    }).then(response => {
+                        if (response.ok) {
+                            this.holidays.push(this.newHoliday);
+                            this.newHoliday = new Holiday();
+                        }
+                    });
                 }
             }
         });
